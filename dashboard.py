@@ -119,7 +119,6 @@ class ReceiveThread(threading.Thread):
                 # print "MAF_Value = %d" % MAF_Value
 
 
-
 size = width, height = 1320, 740
 
 monitorX = pygame.display.Info().current_w
