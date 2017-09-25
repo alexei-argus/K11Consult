@@ -34,7 +34,6 @@ if len(sys.argv) != 2:
 os.environ['SDL_VIDEO_WINDOW_POS'] = 'center'
 
 pygame.init()
-# TODO: change font (?)
 label_font = pygame.font.SysFont("Droid Sans", 32)
 
 SERIAL_BAUD_RATE = 115200
@@ -48,15 +47,27 @@ TEMP_Value = 0
 BATT_Value = 0
 AAC_Value = 0  # Automatic Air Conditioning
 MAF_Value = 0  # Mass Air Flow
-Text_Value = 'This might be a flag'
+Text_Value = ''
 
-# TODO: PROTOCOL
+
+# PROTOCOL: each message has the following structure:
+# - 4-byte magic
+# - 1-byte operation type
+# - 1-byte length
+# - value
+#
+#
+
+
+FRAME_MAGIC = 'E824F65A'.decode('hex')
+
 
 # constants defining the operation types for the protocol
 MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP = range(7)
 
 
-# constants defining the maximum value for every dial
+# constants defining the maximum value for every numeric command
+# (note that Text_OP doesn't need to be validated)
 MAXIMUM_VALUES = {MPH_OP: 100,
                   RMP_OP: 5000,
                   Temp_OP: 160,
@@ -80,18 +91,38 @@ class ReceiveThread(threading.Thread):
 
     def run(self):
         while THREAD_SHOULD_RUN:
-            data = PORT.read(4)
-            if ord(data[0]) != 0:
-                # not our data - skip this
-                print "not our data - skipping"
+            # wait for the magic to arrive
+
+            found_entire_magic = True
+            for i in xrange(len(FRAME_MAGIC)):
+                b = PORT.read(1)
+                if b != FRAME_MAGIC[i]:
+                    found_entire_magic = False
+                    break
+
+            if not found_entire_magic:
+                # we didn't find the magic
                 continue
 
-            op = ord(data[1])
-            value = struct.unpack("<H", data[2:])[0]
+            # read the length and type
+            header = PORT.read(2)
+            op, length = ord(header[0]), ord(header[1])
 
-            if op not in MAXIMUM_VALUES:
+            # validate op
+            if (op not in MAXIMUM_VALUES) and (op != Text_OP):
                 print "op %d is invalid" % op
                 continue
+
+            data = PORT.read(length)
+
+            if op == Text_OP:
+                # we only need to set the label text
+                global Text_Value
+                Text_Value = data
+                continue
+
+            # all the numeric values are handled similarly
+            value = struct.unpack("<H", data[2:])[0]
 
             if value > MAXIMUM_VALUES[op]:
                 print "value %d is out of range [0, %d] for op %d" % (value, MAXIMUM_VALUES[op], op)
