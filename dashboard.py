@@ -25,6 +25,7 @@ import serial
 import threading
 import struct
 
+
 # validate the arguments
 if len(sys.argv) != 2:
     print "USAGE: dashboard.py <COM device (COM7, /dev/tty5, etc.)>"
@@ -33,6 +34,8 @@ if len(sys.argv) != 2:
 os.environ['SDL_VIDEO_WINDOW_POS'] = 'center'
 
 pygame.init()
+# TODO: change font (?)
+label_font = pygame.font.SysFont("Droid Sans", 32)
 
 SERIAL_BAUD_RATE = 115200
 PORT = serial.Serial(sys.argv[1], SERIAL_BAUD_RATE, timeout=None)
@@ -45,12 +48,12 @@ TEMP_Value = 0
 BATT_Value = 0
 AAC_Value = 0  # Automatic Air Conditioning
 MAF_Value = 0  # Mass Air Flow
+Text_Value = 'This might be a flag'
 
-# PROTOCOL: every message is four bytes, first is always 0, the second byte is the operation type,
-# the third and fourth are a 16-bit LITTLE-ENDIAN unsigned value.
+# TODO: PROTOCOL
 
 # constants defining the operation types for the protocol
-MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP = range(6)
+MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP = range(7)
 
 
 # constants defining the maximum value for every dial
@@ -82,6 +85,7 @@ class ReceiveThread(threading.Thread):
                 # not our data - skip this
                 print "not our data - skipping"
                 continue
+
             op = ord(data[1])
             value = struct.unpack("<H", data[2:])[0]
 
@@ -119,64 +123,73 @@ class ReceiveThread(threading.Thread):
                 # print "MAF_Value = %d" % MAF_Value
 
 
-size = width, height = 1320, 740
+size = window_width, window_height = 1320, 740
 
-monitorX = pygame.display.Info().current_w
-monitorY = pygame.display.Info().current_h
+monitor_width = pygame.display.Info().current_w
+monitor_height = pygame.display.Info().current_h
 
-surface1FullscreenX = (monitorX / 2) - 650
-surface1FullscreenY = (monitorY / 2) - 360
+surface1FullscreenX = (monitor_width / 2) - 650
+surface1FullscreenY = (monitor_height / 2) - 360
 
-surface1WindowedX = (width / 2) - 650
-surface1WindowedY = (height / 2) - 360
+surface1WindowedX = (window_width / 2) - 650
+surface1WindowedY = (window_height / 2) - 360
 
 surface1X = surface1WindowedX
 surface1Y = surface1WindowedY
 
-surface2FullscreenX = (monitorX / 2) - 500
-surface2FullscreenY = (monitorY / 2) - 210
+surface2FullscreenX = (monitor_width / 2) - 500
+surface2FullscreenY = (monitor_height / 2) - 210
 
-surface2WindowedX = (width / 2) - 500
-surface2WindowedY = (height / 2) - 210
+surface2WindowedX = (window_width / 2) - 500
+surface2WindowedY = (window_height / 2) - 210
 
 surface2X = surface2WindowedX
 surface2Y = surface2WindowedY
 
-surface3FullscreenX = (monitorX / 2) - 650
-surface3FullscreenY = (monitorY / 2) - 360
+surface3FullscreenX = (monitor_width / 2) - 650
+surface3FullscreenY = (monitor_height / 2) - 360
 
-surface3WindowedX = (width / 2) - 650
-surface3WindowedY = (height / 2) - 360
+surface3WindowedX = (window_width / 2) - 650
+surface3WindowedY = (window_height / 2) - 360
 
 surface3X = surface3WindowedX
 surface3Y = surface3WindowedY
 
-surface4FullscreenX = (monitorX / 2) + 310
-surface4FullscreenY = (monitorY / 2) - 360
+surface4FullscreenX = (monitor_width / 2) + 310
+surface4FullscreenY = (monitor_height / 2) - 360
 
-surface4WindowedX = (width / 2) + 310
-surface4WindowedY = (height / 2) - 360
+surface4WindowedX = (window_width / 2) + 310
+surface4WindowedY = (window_height / 2) - 360
 
 surface4X = surface4WindowedX
 surface4Y = surface4WindowedY
 
-surface5FullscreenX = (monitorX / 2) - 310
-surface5FullscreenY = (monitorY / 2) + 60
+surface5FullscreenX = (monitor_width / 2) - 310
+surface5FullscreenY = (monitor_height / 2) + 60
 
-surface5WindowedX = (width / 2) - 310
-surface5WindowedY = (height / 2) + 60
+surface5WindowedX = (window_width / 2) - 310
+surface5WindowedY = (window_height / 2) + 60
 
 surface5X = surface5WindowedX
 surface5Y = surface5WindowedY
 
-surface6FullscreenX = (monitorX / 2) + 10
-surface6FullscreenY = (monitorY / 2) + 60
+surface6FullscreenX = (monitor_width / 2) + 10
+surface6FullscreenY = (monitor_height / 2) + 60
 
-surface6WindowedX = (width / 2) + 10
-surface6WindowedY = (height / 2) + 60
+surface6WindowedX = (window_width / 2) + 10
+surface6WindowedY = (window_height / 2) + 60
 
 surface6X = surface6WindowedX
 surface6Y = surface6WindowedY
+
+labelFullscreenX = 30
+labelFullscreenY = monitor_height - 40
+
+labelWindowedX = 30
+labelWindowedY = window_height - 40
+
+labelX = labelWindowedX
+labelY = labelWindowedY
 
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Dashboard")
@@ -196,7 +209,7 @@ surface6.set_colorkey(0x0000FF)
 
 screen.fill(0x000000)
 
-fifeteen = pygame.font.SysFont("Droid Sans", 15)
+fifteen = pygame.font.SysFont("Droid Sans", 15)
 
 twenty = pygame.font.SysFont("Droid Sans", 18)
 
@@ -385,7 +398,7 @@ while True:
             sys.exit()
 
         if event.type is KEYDOWN and event.key == K_w:
-            pygame.display.set_mode((width, height))
+            pygame.display.set_mode((window_width, window_height))
             pygame.mouse.set_visible(False)
             surface1X = surface1WindowedX
             surface1Y = surface1WindowedY
@@ -399,10 +412,12 @@ while True:
             surface5Y = surface5WindowedY
             surface6X = surface6WindowedX
             surface6Y = surface6WindowedY
+            labelX = labelWindowedX
+            labelY = labelWindowedY
             screen.fill(0x000000)
 
         if event.type is KEYDOWN and event.key == K_f:
-            pygame.display.set_mode((monitorX, monitorY), FULLSCREEN)
+            pygame.display.set_mode((monitor_width, monitor_height), FULLSCREEN)
             surface1X = surface1FullscreenX
             surface1Y = surface1FullscreenY
             surface2X = surface2FullscreenX
@@ -415,6 +430,8 @@ while True:
             surface5Y = surface5FullscreenY
             surface6X = surface6FullscreenX
             surface6Y = surface6FullscreenY
+            labelX = labelFullscreenX
+            labelY = labelFullscreenY
             screen.fill(0x000000)
             pygame.mouse.set_visible(False)
 
@@ -441,6 +458,10 @@ while True:
     screen.blit(surface4, (surface4X, surface4Y))
     screen.blit(surface5, (surface5X, surface5Y))
     screen.blit(surface6, (surface6X, surface6Y))
+
+    # text label
+    label = label_font.render(Text_Value, 1, (0, 200, 0))
+    screen.blit(label, (labelX, labelY))
 
     # time.sleep(0.02)
 
