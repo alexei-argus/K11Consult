@@ -28,7 +28,9 @@ import struct
 
 # validate the arguments
 if len(sys.argv) != 2:
-    print "USAGE: dashboard.py <COM device (COM7, /dev/tty5, etc.)>"
+    print "USAGE: dashboard.py <UARTs device (COM7, /dev/tty5, etc.)>"
+    print "Press Enter to quit."
+    raw_input()
     exit(1)
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = 'center'
@@ -129,7 +131,6 @@ class ReceiveThread(threading.Thread):
             data = PORT.read(length)
 
             # all the numeric values are handled similarly
-            print "DATA (%d): %s" % (len(data), data.encode('hex'))
             value = struct.unpack("<H", data)[0]
 
             if value > MAXIMUM_VALUES[op]:
