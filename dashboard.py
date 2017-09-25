@@ -108,21 +108,29 @@ class ReceiveThread(threading.Thread):
             header = PORT.read(2)
             op, length = ord(header[0]), ord(header[1])
 
+            # Text_OP is a special case - no validation, variable-length data
+            if op == Text_OP:
+                # we only need to set the label text
+                global Text_Value
+                Text_Value = PORT.read(length)
+                continue
+
+            # validate length
+
+            if length != 2:
+                print "length %d is invalid" % length
+                continue
+
             # validate op
-            if (op not in MAXIMUM_VALUES) and (op != Text_OP):
+            if op not in MAXIMUM_VALUES:
                 print "op %d is invalid" % op
                 continue
 
             data = PORT.read(length)
 
-            if op == Text_OP:
-                # we only need to set the label text
-                global Text_Value
-                Text_Value = data
-                continue
-
             # all the numeric values are handled similarly
-            value = struct.unpack("<H", data[2:])[0]
+            print "DATA (%d): %s" % (len(data), data.encode('hex'))
+            value = struct.unpack("<H", data)[0]
 
             if value > MAXIMUM_VALUES[op]:
                 print "value %d is out of range [0, %d] for op %d" % (value, MAXIMUM_VALUES[op], op)
