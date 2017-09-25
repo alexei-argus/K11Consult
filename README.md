@@ -17,5 +17,7 @@ Prerequisites
 Usage
 ================================
 dashboard.py <UART device>.
+
 Windows example: dashboard.py COM7
+
 Linux example: dashboard.py /dev/ttyUSB0
