@@ -16,7 +16,7 @@ Prerequisites
 
 Usage
 ================================
-dashboard.py <UART device>.
+dashboard.py \<UART device\>.
 
 Windows example: dashboard.py COM7
 
