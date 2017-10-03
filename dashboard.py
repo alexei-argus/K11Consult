@@ -65,7 +65,8 @@ FRAME_MAGIC = 'E824F65A'.decode('hex')
 
 
 # constants defining the operation types for the protocol
-MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP = range(7)
+# the values start from 0x30
+MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP = range(0x30, 0x30 + 7)
 
 
 # constants defining the maximum value for every numeric command
