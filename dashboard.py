@@ -108,14 +108,14 @@ class ReceiveThread(threading.Thread):
                 continue
 
             # read the length and type
-            header = PORT.read(2)
+            header = PORT.read(4).decode('hex')
             op, length = ord(header[0]), ord(header[1])
 
             # Text_OP is a special case - no validation, variable-length data
             if op == Text_OP:
                 # we only need to set the label text
                 global Text_Value
-                Text_Value = PORT.read(length)
+                Text_Value = PORT.read(2 * length).decode('hex')
                 continue
 
             # validate length
@@ -129,7 +129,8 @@ class ReceiveThread(threading.Thread):
                 print "op %d is invalid" % op
                 continue
 
-            data = PORT.read(length)
+            data = PORT.read(2 * length)
+            data = data.decode('hex')
 
             # all the numeric values are handled similarly
             value = struct.unpack("<H", data)[0]
