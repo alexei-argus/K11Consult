@@ -49,6 +49,7 @@ TEMP_Value = 0
 BATT_Value = 0
 AAC_Value = 0  # Automatic Air Conditioning
 MAF_Value = 0  # Mass Air Flow
+IND_Value = 0  # Indicator light
 Text_Value = ''
 
 
@@ -66,7 +67,7 @@ FRAME_MAGIC = 'E824F65A'.decode('hex')
 
 # constants defining the operation types for the protocol
 # the values start from 0x30
-MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP = range(0x30, 0x30 + 7)
+MPH_OP, RMP_OP, Temp_OP, Batt_OP, AAC_OP, MAF_OP, Text_OP, IND_OP = range(0x30, 0x30 + 8)
 
 
 # constants defining the maximum value for every numeric command
@@ -76,7 +77,8 @@ MAXIMUM_VALUES = {MPH_OP: 100,
                   Temp_OP: 160,
                   Batt_OP: 20,
                   AAC_OP: 100,
-                  MAF_OP: 500}
+                  MAF_OP: 500,
+                  IND_OP: 1}
 
 
 class ReceiveThread(threading.Thread):
@@ -91,6 +93,7 @@ class ReceiveThread(threading.Thread):
         self.AAC_Value = 0
         self.INJ_Value = 0
         self.TIM_Value = 0
+        self.IND_Value = 0
 
     def run(self):
         while THREAD_SHOULD_RUN:
@@ -163,6 +166,9 @@ class ReceiveThread(threading.Thread):
                 global MAF_Value
                 MAF_Value = value
                 # print "MAF_Value = %d" % MAF_Value
+            elif op == IND_OP:
+                global IND_Value
+                IND_Value = value
 
 
 size = window_width, window_height = 1320, 740
@@ -224,6 +230,15 @@ surface6WindowedY = (window_height / 2) + 60
 surface6X = surface6WindowedX
 surface6Y = surface6WindowedY
 
+surface_imgX_Fullscreen = (monitor_width / 2)
+surface_imgY_Fullscreen = (monitor_height / 2)
+
+surface_imgX_Windowed = (window_width / 2)
+surface_imgY_Windowed = (window_height / 2)
+
+surface_imgX = surface_imgX_Windowed
+surface_imgY = surface_imgY_Windowed
+
 labelFullscreenX = 30
 labelFullscreenY = monitor_height - 40
 
@@ -270,6 +285,10 @@ millivolt = 'mV'
 volt = 'V'
 
 degree = u"\u00B0"
+
+# load check engine indicator image
+indlight_img = pygame.image.load("check-engine-light-1.jpg")
+indlight_img = pygame.transform.smoothscale(indlight_img, (50,50))
 
 pygame.mouse.set_visible(False)
 
@@ -454,6 +473,8 @@ while True:
             surface5Y = surface5WindowedY
             surface6X = surface6WindowedX
             surface6Y = surface6WindowedY
+            surface_imgX = surface_imgX_Windowed
+            surface_imgY = surface_imgY_Windowed
             labelX = labelWindowedX
             labelY = labelWindowedY
             screen.fill(0x000000)
@@ -472,6 +493,8 @@ while True:
             surface5Y = surface5FullscreenY
             surface6X = surface6FullscreenX
             surface6Y = surface6FullscreenY
+            surface_imgX = surface_imgX_Fullscreen
+            surface_imgY = surface_imgY_Fullscreen
             labelX = labelFullscreenX
             labelY = labelFullscreenY
             screen.fill(0x000000)
@@ -500,6 +523,9 @@ while True:
     screen.blit(surface4, (surface4X, surface4Y))
     screen.blit(surface5, (surface5X, surface5Y))
     screen.blit(surface6, (surface6X, surface6Y))
+    # engine image blit
+    if IND_Value == 1:
+        screen.blit(indlight_img, (surface_imgX,surface_imgY))
 
     # text label
     label = label_font.render(Text_Value, 1, (0, 200, 0))
