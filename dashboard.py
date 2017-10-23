@@ -124,12 +124,12 @@ class ReceiveThread(threading.Thread):
             # validate length
 
             if length != 2:
-                print "length %d is invalid" % length
+                # print "length %d is invalid" % length
                 continue
 
             # validate op
             if op not in MAXIMUM_VALUES:
-                print "op %d is invalid" % op
+                # print "op %d is invalid" % op
                 continue
 
             data = PORT.read(2 * length)
@@ -139,7 +139,7 @@ class ReceiveThread(threading.Thread):
             value = struct.unpack("<H", data)[0]
 
             if value > MAXIMUM_VALUES[op]:
-                print "value %d is out of range [0, %d] for op %d" % (value, MAXIMUM_VALUES[op], op)
+                # print "value %d is out of range [0, %d] for op %d" % (value, MAXIMUM_VALUES[op], op)
                 continue
 
             if op == MPH_OP:
